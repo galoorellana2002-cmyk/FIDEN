@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FIDEN · Tienda online
 
-## Getting Started
+Next.js (React) + TypeScript + Tailwind CSS + Supabase + Payphone, lista para Vercel.
 
-First, run the development server:
+## Correr en tu computadora
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+cp .env.example .env.local   # completa los valores (opcional al inicio)
+npm run dev                  # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Sin las variables de Supabase la tienda funciona en **modo demo**: catálogo local (`src/lib/seed.ts`) y pedidos por WhatsApp.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 1. Supabase (productos, stock, pedidos, clientes, inicio de sesión)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Crea un proyecto en https://supabase.com.
+2. En **SQL Editor** ejecuta `supabase/migrations/0001_init.sql` y luego `supabase/seed.sql`.
+3. Copia en `.env.local` la URL, la `anon key` y la `service_role key` (Project Settings → API).
+4. En **Authentication → URL Configuration** agrega `http://localhost:3000/auth/callback` y `https://fiden.ec/auth/callback`.
+5. Para hacerte administrador: entra en `/cuenta` con tu correo y luego ejecuta en SQL Editor:
+   ```sql
+   insert into admins (user_id) select id from auth.users where email = 'tu@correo.com';
+   ```
+   Ya puedes usar el panel en `/admin` (pedidos, estados, productos, precios, stock y fotos).
 
-## Learn More
+El stock se descuenta al crear un pedido y se devuelve si el pedido se cancela.
 
-To learn more about Next.js, take a look at the following resources:
+## 2. Payphone (tarjetas)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Crea una aplicación tipo **Web** en https://appdeveloper.payphonetodoesposible.com.
+2. Configura como URL de respuesta `https://fiden.ec/pago/confirmacion`.
+3. Copia el **Token** y el **StoreId** en `PAYPHONE_TOKEN` y `PAYPHONE_STORE_ID`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Mientras estén vacíos, la opción de tarjeta no aparece. Efectivo, transferencia y Deuna siguen por WhatsApp.
+Los precios se envían con impuestos incluidos; si facturas IVA aparte, ajusta `src/lib/payphone.ts`.
 
-## Deploy on Vercel
+## 3. Vercel (hosting)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Sube el proyecto a GitHub e impórtalo en https://vercel.com.
+2. Agrega las mismas variables de `.env.local` (con `NEXT_PUBLIC_SITE_URL=https://fiden.ec`).
+3. En **Settings → Domains** conecta `fiden.ec` o tu `.com`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Estructura
+
+```
+src/app/            páginas: inicio, /tienda, /tienda/[categoria], /cuenta, /admin, /pago/confirmacion
+src/components/     header, footer, tarjeta de producto, bolsa y checkout
+src/lib/            catálogo, Supabase, Payphone, configuración
+supabase/           esquema de base de datos y datos iniciales
+_original/          el HTML original de referencia
+```
